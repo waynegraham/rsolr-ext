@@ -1,27 +1,27 @@
 module RSolr::Ext::Request
-  
+
   module Params
-    
+
     def map input_params
       input = input_params.dup
-      
+
       output = {}
-      
+
       if input[:per_page]
-        output[:rows] = input.delete(:per_page).to_i
+        output[:rows] = input.delete(:per_page).first.to_i
       end
-      
+
       if page = input.delete(:page)
         raise ':per_page must be set when using :page' unless output[:rows]
         page = page.to_s.to_i-1
         page = page < 1 ? 0 : page
         output[:start] = page * output[:rows]
       end
-      
+
       # remove the input :q params
       output[:q] = input.delete :q
       output[:fq] = input.delete(:fq) if input[:fq]
-      
+
       if queries = input.delete(:queries)
         output[:q] = append_to_param output[:q], build_query(queries, false)
       end
@@ -40,11 +40,11 @@ module RSolr::Ext::Request
       end
       output.merge input
     end
-    
+
   end
-  
+
   module QueryHelpers
-    
+
     # Wraps a string around double quotes
     def quote(value)
       %("#{value}")
@@ -78,7 +78,7 @@ module RSolr::Ext::Request
         return value.collect do |(k,v)|
           if v.is_a?(Range)
             "#{k}:#{build_range(v)}"
-          # If the value is an array, we want the same param, multiple times (not a query join)
+            # If the value is an array, we want the same param, multiple times (not a query join)
           elsif v.is_a?(Array)
             v.collect do |vv|
               "#{k}:#{build_query(vv, quote_string)}"
@@ -101,10 +101,10 @@ module RSolr::Ext::Request
       values.delete_if{|v|v.nil?}
       auto_join ? values.join(' ') : values.flatten
     end
-    
+
   end
-  
+
   extend QueryHelpers
   extend Params
-  
+
 end
